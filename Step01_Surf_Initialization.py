@@ -154,7 +154,7 @@ def find_key_points(data):
     # 找最小负值（在起始到max_positive_idx之间，基于原始数据索引）
     if max_positive_idx is not None and max_positive_idx > 1:  # 确保有足够的点
         # 计算原始数据中从索引1到max_positive_idx的导数
-        segment = np.diff(data[1:max_positive_idx + 1])
+        segment = np.diff(data[1:max_positive_idx])
         if len(segment) > 0:
             min_deriv_value = np.min(segment)
             if min_deriv_value < 0:
@@ -267,7 +267,7 @@ def process_all_vertices_refined(lh_w_v1, lh_p_v1, T2_Torig, T2_brainmask_data, 
     for i in range(n_vertices):
         if np.isnan(outer_coords[i, 0]):
             fill_outer_idx = int(round(median_outer_rel * (num_samples - 1)))
-            fill_outer_idx = np.clip(fill_outer_idx, 0, num_samples - 1)
+            fill_outer_idx = np.clip(fill_outer_idx, 1, num_samples - 2)
             outer_coords[i] = all_ras_profiles[i][fill_outer_idx]
 
     # 2. 填充缺失的 inner (min_negative_idx)
@@ -288,7 +288,7 @@ def process_all_vertices_refined(lh_w_v1, lh_p_v1, T2_Torig, T2_brainmask_data, 
 
             # 计算 inner 填充位置：在 [0, outer_idx] 区间内
             fill_inner_idx = int(round(median_inner_local_rel * outer_idx))
-            fill_inner_idx = np.clip(fill_inner_idx, 0, outer_idx)  # 确保 ≤ outer_idx
+            fill_inner_idx = np.clip(fill_inner_idx, 1, outer_idx-2)  # 确保 ≤ outer_idx
             inner_coords[i] = ras_profile[fill_inner_idx]
 
     return inner_coords, outer_coords

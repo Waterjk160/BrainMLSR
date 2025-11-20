@@ -296,8 +296,8 @@ def read_abnormal_csv(csv_file):
 
 # 原始的参数
 def gradient_descent(inner_coords, outer_coords, v_inner, v_outer, faces, input_image_path, \
-                    alpha_inner=3, alpha_outer=3,  beta_inner=1, beta_middle=1, beta_outer=1, gamma_inner=0.5, gamma_outer=0.5,\
-                    learning_rate=0.01, iterations=80, tol=1e-6):
+                        alpha_inner, alpha_outer,  beta_inner, beta_middle, beta_outer, gamma_inner, gamma_outer,  \
+                        learning_rate, iterations, tol):
     """使用梯度下降优化顶点位置"""
     num_vertices = v_inner.shape[0]
     Torig, image_data, grad_x, grad_y, grad_z = compute_gradient_vector_xyz(input_image_path)
