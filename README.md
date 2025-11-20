@@ -32,8 +32,8 @@ python Register.py --fixed T2FLAIR_05.mgz --moving T1_05.nii.gz --output_dir T1_
 recon-all -all -i T1_05_reg.nii.gz -s "UII_5T" -openmp 8
 ```
 
-## 2.BrainMLSR
-### 1. 初始表面提取
+## 2.BrainMLSR进行低信号层表面重建
+### （1）初始表面提取
 通过梯度方法先得到低信号层的初始内外表面。如果是lh的话，就对应把所有的rh改成lh
 ```
 python Step01_Surf_Initialization.py \
@@ -44,7 +44,7 @@ python Step01_Surf_Initialization.py \
     --init_hypo_outer rh_init_hypo_layer.outer \
 ```
 
-### 2. 多信号层表面优化
+### （2）多信号层表面优化
 
 先得到T2FLAIR的梯度图像，为能量函数的优化做准备。
 ```
