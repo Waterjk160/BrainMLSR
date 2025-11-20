@@ -4,7 +4,7 @@
 <p align="center">
   <img src="figures/pipeline.png" width="500" />
   <br>
-  <em>Figure 1: pipeline.</em>
+  <em>Figure 1: pipeline of BrainMLSR.</em>
 </p>
 
 主要步骤
