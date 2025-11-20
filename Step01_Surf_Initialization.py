@@ -340,7 +340,7 @@ if __name__ == "__main__":
     parser.add_argument('--T2flair', required=True, help='Path to the T2 MRI file.')
     parser.add_argument('--num_samples', default=100, help='number of the sample points along the line')
     parser.add_argument('--output_dir', required=True, help='Output directory path.')
-    parser.add_argument('--hemisphere', help='hemisphere of the brain(lh or rh)')
+    parser.add_argument('--hemisphere', required=True, help='hemisphere of the brain(lh or rh)')
     args = parser.parse_args()
 
     # 处理半球

@@ -65,8 +65,8 @@ def main(input_path, output_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="处理MGZ或NIfTI文件，使用基础有限差分计算梯度大小。")
-    parser.add_argument('--input_path', type=str, help='输入MGZ或NIfTI文件的路径。')
-    parser.add_argument('--output_path', type=str, help='保存输出MGZ或NIfTI文件的路径。')
+    parser.add_argument('--input_path', required=True, type=str, help='输入MGZ或NIfTI文件的路径。')
+    parser.add_argument('--output_path', required=True, type=str, help='保存输出MGZ或NIfTI文件的路径。')
     args = parser.parse_args()
     
     if not os.path.exists(args.input_path):

@@ -424,13 +424,13 @@ def main(white_surf, pial_surf, initial_hypointense_inner, initial_hypointense_o
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process surface geometries and optimize using gradient descent.")
-    parser.add_argument('--white_surf', type=str, help='Path to the inner white matter surface file.')
-    parser.add_argument('--pial_surf', type=str, help='Path to the pial surface file.')
-    parser.add_argument('--initial_hypointense_inner', type=str, help='Path to the initial inner hypointense layer surf file.')
-    parser.add_argument('--initial_hypointense_outer', type=str, help='Path to the initial outer hypointense layer surf file.')
-    parser.add_argument('--T2_gradient_image', type=str, help='Path to the T2 gradient image file.')
-    parser.add_argument('--output_file_final_inner', type=str, help='Path to save the optimized inner final surf file.')
-    parser.add_argument('--output_file_final_outer', type=str, help='Path to save the optimized outer final surf file.')
+    parser.add_argument('--white_surf', required=True, type=str, help='Path to the inner white matter surface file.')
+    parser.add_argument('--pial_surf', required=True, type=str, help='Path to the pial surface file.')
+    parser.add_argument('--initial_hypointense_inner', required=True, type=str, help='Path to the initial inner hypointense layer surf file.')
+    parser.add_argument('--initial_hypointense_outer', required=True, type=str, help='Path to the initial outer hypointense layer surf file.')
+    parser.add_argument('--T2_gradient_image', required=True, type=str, help='Path to the T2 gradient image file.')
+    parser.add_argument('--output_file_final_inner', required=True, type=str, help='Path to save the optimized inner final surf file.')
+    parser.add_argument('--output_file_final_outer', required=True, type=str, help='Path to save the optimized outer final surf file.')
     args = parser.parse_args()
 
     if not all(map(os.path.exists, [args.white_surf, args.pial_surf, args.initial_hypointense_inner, args.initial_hypointense_outer, args.T2_gradient_image])):
