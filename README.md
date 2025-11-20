@@ -48,7 +48,7 @@ python Step01_Surf_Initialization.py \
 
 先得到T2FLAIR的梯度图像，为能量函数的优化做准备。
 ```
-python $code_dir/Step02_GradImage.py T2FLAIR_05.mgz --input_path $T2_flair --output_path T2FLAIR_05_gradient.mgz
+python Step02_GradImage.py --input_path T2FLAIR_05.mgz --output_path T2FLAIR_05_gradient.mgz
 ```
 
 再通过能量函数对曲面进行优化。如果是lh的话，就对应把所有的rh改成lh。
