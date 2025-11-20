@@ -55,7 +55,7 @@ python $code_dir/Step02_GradImage.py T2FLAIR_05.mgz --input_path $T2_flair --out
 通过能量函数对曲面进行优化
 ```
 python Step03_Surf_Initialization.py \
-    --white_surf $INNER_WHITE --pial_surf $PIAL_SURF --initial_hypointense_inner $LAYER_45_WHITE --initial_hypointense_outer $LAYER_34_WHITE --T2_gradient_image $T2_GRADIENT_IMAGE
+    --white_surf rh.wwhite --pial_surf rh.pial --initial_hypointense_inner $LAYER_45_WHITE --initial_hypointense_outer $LAYER_34_WHITE --T2_gradient_image $T2_GRADIENT_IMAGE
     --output_file_final_inner $lh_granular_inner --output_file_final_outer $lh_granular_outer
 ```
 
