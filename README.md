@@ -1,5 +1,4 @@
 # BrainMLSR
-实现BrainMLSR流程
 ## 1. BrainMLSR流程
 
 <p align="center">
