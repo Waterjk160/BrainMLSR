@@ -295,12 +295,9 @@ def read_abnormal_csv(csv_file):
     return df['is_abnormal'].values  # 返回异常标记的数组
 
 # 原始的参数
-# def gradient_descent(inner_coords, outer_coords, v_inner, v_outer, faces, input_image_path, \
-#                     alpha_inner=3, alpha_outer=3,  beta_inner=1, beta_middle=1, beta_outer=1, gamma_inner=0.5, gamma_outer=0.5,\
-#                     learning_rate=0.01, iterations=80, tol=1e-6):
 def gradient_descent(inner_coords, outer_coords, v_inner, v_outer, faces, input_image_path, \
                     alpha_inner=3, alpha_outer=3,  beta_inner=1, beta_middle=1, beta_outer=1, gamma_inner=0.5, gamma_outer=0.5,\
-                    learning_rate=0.01, iterations=30, tol=1e-6):
+                    learning_rate=0.01, iterations=80, tol=1e-6):
     """使用梯度下降优化顶点位置"""
     num_vertices = v_inner.shape[0]
     Torig, image_data, grad_x, grad_y, grad_z = compute_gradient_vector_xyz(input_image_path)
@@ -332,18 +329,7 @@ def gradient_descent(inner_coords, outer_coords, v_inner, v_outer, faces, input_
         gradient_inner = alpha_inner * laplacian_gradient_inner + beta_inner * distance_gradient_inner + beta_middle * distance_gradient_middle_inner + gamma_inner * image_gradient_gradient_inner
         gradient_outer = alpha_outer * laplacian_gradient_outer + beta_outer * distance_gradient_outer + beta_middle * distance_gradient_middle_outer + gamma_outer * image_gradient_gradient_outer
         
-        # # 打印每项能量
-        # print(f"Iteration {iter}:")
-        # print(f"  Laplacian Inner: {laplacian_energy_inner:.4f}")
-        # print(f"  Laplacian Outer: {laplacian_energy_outer:.4f}")
-        # print(f"  Distance Outer:  {distance_error_outer:.4f}")
-        # print(f"  Distance Middle: {distance_error_middle:.4f}")
-        # print(f"  Distance Inner:  {distance_error_inner:.4f}")
-        # print(f"  Image Gradient Outer: {image_gradient_energy_outer:.4f}")
-        # print(f"  Image Gradient Inner: {image_gradient_energy_inner:.4f}")
-        # print(f"  Total Energy:    {total_energy:.4f}")
-        # print("-" * 40)
-        # print(f"Iteration {iter}: Total Energy = {total_energy}")
+
         # 对梯度进行投影处理
         deform_direction = outer_coords - inner_coords
         gradient_inner = project_gradient_to_line_vectorized(gradient_inner, deform_direction)
@@ -405,37 +391,76 @@ def check_collinearity_and_order_single(inner_gm, inner_gr, outer_gr, outer_gm, 
         
     return True
 
-def main(white_surf, pial_surf, initial_hypointense_inner, initial_hypointense_outer, T2_gradient_image, output_file_final_inner, output_file_final_outer):
+def main(white_surf, pial_surf, init_hypo_inner, init_hypo_outer, T2_gradient_image, final_hypo_inner, final_hypo_outer, \
+                alpha_inner, alpha_outer,  beta_inner, beta_middle, beta_outer, gamma_inner, gamma_outer,                \
+                learning_rate, iterations, tol):
     # 加载数据
     inner_coords, faces = read_geometry(white_surf)
     outer_coords, _ = read_geometry(pial_surf)
-    initial_v_inner, _,  = read_geometry(initial_hypointense_inner)
-    initial_v_outer, _,  = read_geometry(initial_hypointense_outer)
+    initial_v_inner, _,  = read_geometry(init_hypo_inner)
+    initial_v_outer, _,  = read_geometry(init_hypo_outer)
 
 
     # 执行梯度下降优化
-    optimized_v_inner, optimized_v_outer = gradient_descent(inner_coords, outer_coords, initial_v_inner, initial_v_outer, faces, T2_gradient_image)
+    optimized_v_inner, optimized_v_outer = gradient_descent(inner_coords, outer_coords, initial_v_inner, initial_v_outer, faces, T2_gradient_image,       \
+                                                                alpha_inner, alpha_outer,  beta_inner, beta_middle, beta_outer, gamma_inner, gamma_outer, \
+                                                                learning_rate, iterations, tol)
 
     # 保存结果
-    write_geometry(output_file_final_inner, optimized_v_inner, faces)
-    write_geometry(output_file_final_outer, optimized_v_outer, faces)
-    print(f"output_file_final_inner={output_file_final_inner}", flush=True)
-    print(f"output_file_final_outer={output_file_final_outer}", flush=True)
+    write_geometry(final_hypo_inner, optimized_v_inner, faces)
+    write_geometry(final_hypo_outer, optimized_v_outer, faces)
+    print(f"final_hypo_inner={final_hypo_inner}", flush=True)
+    print(f"final_hypo_outer={final_hypo_outer}", flush=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process surface geometries and optimize using gradient descent.")
     parser.add_argument('--white_surf', required=True, type=str, help='Path to the inner white matter surface file.')
     parser.add_argument('--pial_surf', required=True, type=str, help='Path to the pial surface file.')
-    parser.add_argument('--initial_hypointense_inner', required=True, type=str, help='Path to the initial inner hypointense layer surf file.')
-    parser.add_argument('--initial_hypointense_outer', required=True, type=str, help='Path to the initial outer hypointense layer surf file.')
+    parser.add_argument('--init_hypo_inner', required=True, type=str, help='Path to the initial inner hypointense layer surf file.')
+    parser.add_argument('--init_hypo_outer', required=True, type=str, help='Path to the initial outer hypointense layer surf file.')
     parser.add_argument('--T2_gradient_image', required=True, type=str, help='Path to the T2 gradient image file.')
-    parser.add_argument('--output_file_final_inner', required=True, type=str, help='Path to save the optimized inner final surf file.')
-    parser.add_argument('--output_file_final_outer', required=True, type=str, help='Path to save the optimized outer final surf file.')
+    parser.add_argument('--final_hypo_inner', required=True, type=str, help='Path to save the optimized inner final surf file.')
+    parser.add_argument('--final_hypo_outer', required=True, type=str, help='Path to save the optimized outer final surf file.')
+
+    # 可选的优化参数（带默认值）
+    parser.add_argument('--alpha_inner', type=float, default=3.0, help='Weight for inner layer smoothness (default: 3.0)')
+    parser.add_argument('--alpha_outer', type=float, default=3.0, help='Weight for outer layer smoothness (default: 3.0)')
+    parser.add_argument('--beta_inner', type=float, default=1.0, help='Weight for inner layer distance to white (default: 1.0)')
+    parser.add_argument('--beta_middle', type=float, default=1.0, help='Weight for middle layer constraint (default: 1.0)')
+    parser.add_argument('--beta_outer', type=float, default=1.0, help='Weight for outer layer distance to pial (default: 1.0)')
+    parser.add_argument('--gamma_inner', type=float, default=0.5, help='Weight for inner layer gradient alignment (default: 0.5)')
+    parser.add_argument('--gamma_outer', type=float, default=0.5, help='Weight for outer layer gradient alignment (default: 0.5)')
+    parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for gradient descent (default: 0.01)')
+    parser.add_argument('--iterations', type=int, default=80, help='Maximum number of iterations (default: 80)')
+    parser.add_argument('--tol', type=float, default=1e-6, help='Convergence tolerance (default: 1e-6)')
+
     args = parser.parse_args()
 
-    if not all(map(os.path.exists, [args.white_surf, args.pial_surf, args.initial_hypointense_inner, args.initial_hypointense_outer, args.T2_gradient_image])):
-        missing_files = [f for f in ['white_surf', 'pial_surf', 'initial_hypointense_inner', 'initial_hypointense_outer', 'T2_gradient_image'] if not os.path.exists(getattr(args, f))]
+    if not all(map(os.path.exists, [args.white_surf, args.pial_surf, args.init_hypo_inner, args.init_hypo_outer, args.T2_gradient_image])):
+        missing_files = [f for f in ['white_surf', 'pial_surf', 'init_hypo_inner', 'init_hypo_outer', 'T2_gradient_image'] if not os.path.exists(getattr(args, f))]
         raise FileNotFoundError(f"The following files do not exist: {', '.join(missing_files)}")
 
-    main(args.white_surf, args.pial_surf, args.initial_hypointense_inner, args.initial_hypointense_outer, args.T2_gradient_image, \
-                                args.output_file_final_inner, args.output_file_final_outer)
+    # main(args.white_surf, args.pial_surf, args.init_hypo_inner, args.init_hypo_outer, args.T2_gradient_image, \
+    #                             args.final_hypo_inner, args.final_hypo_outer)
+
+    # 调用 main 函数，传入所有参数
+    main(
+        white_surf=args.white_surf,
+        pial_surf=args.pial_surf,
+        init_hypo_inner=args.init_hypo_inner,
+        init_hypo_outer=args.init_hypo_outer,
+        T2_gradient_image=args.T2_gradient_image,
+        final_hypo_inner=args.final_hypo_inner,
+        final_hypo_outer=args.final_hypo_outer,
+
+        alpha_inner=args.alpha_inner,
+        alpha_outer=args.alpha_outer,
+        beta_inner=args.beta_inner,
+        beta_middle=args.beta_middle,
+        beta_outer=args.beta_outer,
+        gamma_inner=args.gamma_inner,
+        gamma_outer=args.gamma_outer,
+        learning_rate=args.learning_rate,
+        iterations=args.iterations,
+        tol=args.tol
+    )

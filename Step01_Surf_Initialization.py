@@ -294,7 +294,8 @@ def process_all_vertices_refined(lh_w_v1, lh_p_v1, T2_Torig, T2_brainmask_data, 
     return inner_coords, outer_coords
 
 
-def extract_signal_surfaces(white_file, pial_file, T2_file, num_samples, output_file_path, hemisphere):
+def extract_signal_surfaces(white_file, pial_file, T2_file, num_samples, \
+                                init_hypo_inner, init_hypo_outer):
     """
         输入：T1的mesh, T1的图像, T2的图像
         输出：新组织的mesh
@@ -323,13 +324,9 @@ def extract_signal_surfaces(white_file, pial_file, T2_file, num_samples, output_
     # 创建输出目录
     os.makedirs(output_file_path, exist_ok=True)
 
-    # 构造文件路径
-    inner_output_file = os.path.join(output_file_path, f"{hemisphere}_initial_hypointense_layer.inner")
-    outer_output_file = os.path.join(output_file_path, f"{hemisphere}_initial_hypointense_layer.outer")
-
     # 保存为 freesurfer 格式的几何文件
-    nib.freesurfer.io.write_geometry(inner_output_file, hypointense_layer_inner_list, lh_w_f1)
-    nib.freesurfer.io.write_geometry(outer_output_file, hypointense_layer_outer_list, lh_w_f1)
+    nib.freesurfer.io.write_geometry(init_hypo_inner, hypointense_layer_inner_list, lh_w_f1)
+    nib.freesurfer.io.write_geometry(init_hypo_outer, hypointense_layer_outer_list, lh_w_f1)
 
     print(f"已保存中间层网格到：{output_file_path}")
 
@@ -338,10 +335,11 @@ if __name__ == "__main__":
     parser.add_argument('--white', required=True, help='Path to the left hemisphere white matter surface file.')
     parser.add_argument('--pial', required=True, help='Path to the left hemisphere pial surface file.')
     parser.add_argument('--T2flair', required=True, help='Path to the T2 MRI file.')
+    parser.add_argument('--init_hypo_inner', required=True, help='Output inner directory path.')
+    parser.add_argument('--init_hypo_outer', required=True, help='Output outer directory path.')
     parser.add_argument('--num_samples', default=100, help='number of the sample points along the line')
-    parser.add_argument('--output_dir', required=True, help='Output directory path.')
-    parser.add_argument('--hemisphere', required=True, help='hemisphere of the brain(lh or rh)')
     args = parser.parse_args()
 
     # 处理半球
-    extract_signal_surfaces(args.white, args.pial, args.T2flair, args.num_samples, args.output_dir, args.hemisphere)
+    extract_signal_surfaces(args.white, args.pial, args.T2flair, args.num_samples, \
+        args.init_hypo_inner, args.init_hypo_outer)
