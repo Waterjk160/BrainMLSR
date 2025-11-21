@@ -11,6 +11,11 @@
 1. 重建出皮层内外表面
 2. 通过BrainMLSR进行多信号层重建
 
+首先，安装环境依赖
+```
+pip install -r requirements.txt
+```
+
 ## 1. 皮层内外表面重建
 为了便于广泛使用，我们以使用freesurfer为例，进行预处理并且得到皮层内外表面。当然可以通过自己的方法得到皮层内外表面，只要保证：皮层内外表面的顶点必须一一对应并且具有相同的三角形面片关系。
 首先将T1和T2FLAIR序列的dicom通过dicom2niix转成nii图像。现在有的图像：T1.nii.gz，T2FLAIR.nii.gz。
