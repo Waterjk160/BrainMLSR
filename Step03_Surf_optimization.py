@@ -51,6 +51,8 @@ def compute_laplacian(vertices, adjacency):
     return laplacian_energy, gradient
 
 def compute_distance_error(vertices, target_coords, adjacency):
+    # vertices是要被形变的顶点
+    # target_coords是参考目标的顶点 是不变的
     """计算距离误差及其梯度"""
     distance_error = 0.0
     gradient = np.zeros_like(vertices)
@@ -63,9 +65,8 @@ def compute_distance_error(vertices, target_coords, adjacency):
             d_0 = np.mean([np.linalg.norm(vertices[j] - target_coords[j]) for j in adjacency[i]])
         else:
             d_0 = current_distance
-        
+        # 梯度方向
         direction = (vertices[i] - target_coords[i]) / current_distance if current_distance > 1e-6 else np.zeros(3)
-        
         # 累加距离误差
         distance_error += (current_distance - d_0) ** 2 / 2
         
@@ -74,31 +75,65 @@ def compute_distance_error(vertices, target_coords, adjacency):
     
     return distance_error, gradient
 
+# 坐标未回到物理空间
+# def compute_image_gradient_error(vertices, Torig, image_data, grad_x, grad_y, grad_z):
+#     """计算图像梯度"""
+#     image_gradient_energy = 0.0
+#     gradient = np.zeros_like(vertices)
+#     for i in range(len(vertices)):
+#         point_vox_coord = xyz_to_vox_coord_float(Torig, vertices[i])
+#         first_gradient_vox_value = trilinear_interpolation(image_data, point_vox_coord)
+#         # 改-
+#         image_gradient_energy -= first_gradient_vox_value
+#         second_gradient_x = trilinear_interpolation(grad_x, point_vox_coord)
+#         second_gradient_y = trilinear_interpolation(grad_y, point_vox_coord)
+#         second_gradient_z = trilinear_interpolation(grad_z, point_vox_coord)
+
+#         # 梯度
+#         second_gradient_vox = np.array([second_gradient_x, second_gradient_y, second_gradient_z])
+#         # gradient[i] = second_gradient_vox
+#         gradient[i] = vox_to_xyz_coord(Torig, second_gradient_vox)
+#         # print(f"second_gradient_vox, gradient={second_gradient_vox}", flush=True)
+#         # print(f"gradient, gradient={gradient}", flush=True)
+#         # if i>10:
+#         #     break
+    
+#     # print(f"compute_image_gradient_error, gradient={gradient}", flush=True)
+    
+#     return image_gradient_energy, gradient
+
 def compute_image_gradient_error(vertices, Torig, image_data, grad_x, grad_y, grad_z):
     """计算图像梯度"""
     image_gradient_energy = 0.0
     gradient = np.zeros_like(vertices)
+    
+    # 提取仿射矩阵的线性部分，并计算其逆矩阵的转置
+    R = Torig[:3, :3]  # 线性部分
+    try:
+        R_inv_T = np.linalg.inv(R).T  # (R^{-1})^T
+    except np.linalg.LinAlgError:
+        print("Warning: Singular affine matrix. Using identity.")
+        R_inv_T = np.eye(3)
+
     for i in range(len(vertices)):
         point_vox_coord = xyz_to_vox_coord_float(Torig, vertices[i])
+        
+        # 插值得到梯度幅值（用于能量）
         first_gradient_vox_value = trilinear_interpolation(image_data, point_vox_coord)
-        image_gradient_energy += first_gradient_vox_value
+        image_gradient_energy -= first_gradient_vox_value  # 负号！最小化负的能量
+        
+        # 插值得到体素空间梯度分量
         second_gradient_x = trilinear_interpolation(grad_x, point_vox_coord)
         second_gradient_y = trilinear_interpolation(grad_y, point_vox_coord)
         second_gradient_z = trilinear_interpolation(grad_z, point_vox_coord)
-
-        # 梯度
         second_gradient_vox = np.array([second_gradient_x, second_gradient_y, second_gradient_z])
-        gradient[i] = second_gradient_vox
-        # gradient[i] = vox_to_xyz_coord(Torig, second_gradient_vox)
-        # print(f"second_gradient_vox, gradient={second_gradient_vox}", flush=True)
-        # print(f"gradient, gradient={gradient}", flush=True)
-        # if i>10:
-        #     break
-    
-    # print(f"compute_image_gradient_error, gradient={gradient}", flush=True)
+        
+        # 将梯度从体素空间转换到世界空间
+        gradient_world = R_inv_T @ second_gradient_vox
+        gradient[i] = -gradient_world
     
     return image_gradient_energy, gradient
-
+    
 def trilinear_interpolation(brainmask_data, vox_coord):  
     x = vox_coord[0]
     y = vox_coord[1]
@@ -178,29 +213,56 @@ def vox_to_xyz_coord(Torig, vox):
     
 #     return Torig, image_data, grad_x, grad_y, grad_z
 
+
+# sobel＋归一化
+# def compute_gradient_vector_xyz(input_image_path):
+#     # 加载MRI图像
+#     mri_img = nib.load(input_image_path)
+    
+#     # 使用 affine 替代 get_vox2ras_tkr
+#     Torig = mri_img.affine.copy()
+#     # Torig = mri_img.header.get_vox2ras_tkr()
+
+#     image_data = mri_img.get_fdata()
+    
+#     # 计算x, y, z方向上的梯度
+#     grad_x = sobel(image_data, axis=0)  # x方向上的梯度
+#     grad_y = sobel(image_data, axis=1)  # y方向上的梯度
+#     grad_z = sobel(image_data, axis=2)  # z方向上的梯度
+    
+#     # 对每个点的方向向量进行归一化
+#     grad_magnitude = np.sqrt(grad_x**2 + grad_y**2 + grad_z**2 + 1e-8)  # 避免除以零
+    
+#     grad_x /= grad_magnitude
+#     grad_y /= grad_magnitude
+#     grad_z /= grad_magnitude
+    
+#     return Torig, image_data, grad_x, grad_y, grad_z
+
+
+import numpy as np
+import nibabel as nib
+
 def compute_gradient_vector_xyz(input_image_path):
     # 加载MRI图像
     mri_img = nib.load(input_image_path)
     
-    # 使用 affine 替代 get_vox2ras_tkr
-    Torig = mri_img.affine.copy()
-    # Torig = mri_img.header.get_vox2ras_tkr()
+    # 判断是否为 .mgz 文件（不区分大小写）
+    if input_image_path.lower().endswith('.mgz'):
+        Torig = mri_img.header.get_vox2ras_tkr()
+    else:
+        Torig = mri_img.affine.copy()
+        
+    # 获取梯度幅值图像数据
+    gradient_magnitude = mri_img.get_fdata()  # 这里已经是 |∇I_original|
+    
+    # 计算x, y, z方向上的梯度（对梯度幅值求导）
+    grad_x, grad_y, grad_z = np.gradient(gradient_magnitude)
+    
+    # 不需要归一化，因为我们希望保留导数的实际大小
+    
+    return Torig, gradient_magnitude, grad_x, grad_y, grad_z
 
-    image_data = mri_img.get_fdata()
-    
-    # 计算x, y, z方向上的梯度
-    grad_x = sobel(image_data, axis=0)  # x方向上的梯度
-    grad_y = sobel(image_data, axis=1)  # y方向上的梯度
-    grad_z = sobel(image_data, axis=2)  # z方向上的梯度
-    
-    # 对每个点的方向向量进行归一化
-    grad_magnitude = np.sqrt(grad_x**2 + grad_y**2 + grad_z**2 + 1e-8)  # 避免除以零
-    
-    grad_x /= grad_magnitude
-    grad_y /= grad_magnitude
-    grad_z /= grad_magnitude
-    
-    return Torig, image_data, grad_x, grad_y, grad_z
 
 # def bm_to_Torig_data(brainmask_file):
 #     # brainmask到Torig和data
@@ -320,10 +382,10 @@ def gradient_descent(inner_coords, outer_coords, v_inner, v_outer, faces, input_
         image_gradient_energy_outer, image_gradient_gradient_outer = compute_image_gradient_error(v_outer, Torig, image_data, grad_x, grad_y, grad_z)
         image_gradient_energy_inner, image_gradient_gradient_inner = compute_image_gradient_error(v_inner, Torig, image_data, grad_x, grad_y, grad_z)
 
-        
+        # 改成 Imgae gradinet +
         total_energy = alpha_inner * laplacian_energy_inner + alpha_outer * laplacian_energy_outer + \
-                       beta_outer * distance_error_outer + beta_middle * distance_error_middle + beta_inner * distance_error_inner - \
-                       gamma_outer * image_gradient_energy_outer - gamma_inner * image_gradient_energy_inner
+                       beta_outer * distance_error_outer + beta_middle * distance_error_middle + beta_inner * distance_error_inner + \
+                       gamma_outer * image_gradient_energy_outer + gamma_inner * image_gradient_energy_inner
         
         # 改成 Imgae gradinet +
         gradient_inner = alpha_inner * laplacian_gradient_inner + beta_inner * distance_gradient_inner + beta_middle * distance_gradient_middle_inner + gamma_inner * image_gradient_gradient_inner

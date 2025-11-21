@@ -32,13 +32,14 @@ def bm_to_Torig_data(brainmask_file):
     """
     # 加载NIfTI文件
     brainmask = nib.load(brainmask_file)
-    
     # 获取图像数据
     brainmask_data = brainmask.get_fdata()
+    # 检查是否为 .mgz（不区分大小写）
+    if brainmask_file.lower().endswith('.mgz'):
+        Torig = brainmask.header.get_vox2ras_tkr()
+    else:
+        Torig = brainmask.affine.copy()
     
-    # 对于NIfTI文件，使用affine属性代替get_vox2ras_tkr()
-    Torig = brainmask.affine
-    # Torig = brainmask.header.get_vox2ras_tkr()
     return Torig, brainmask_data
 
 def ras_sample(start_ras, end_ras, num_samples):
