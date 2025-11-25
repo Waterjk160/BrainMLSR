@@ -128,9 +128,10 @@ def compute_image_gradient_error(vertices, Torig, image_data, grad_x, grad_y, gr
         second_gradient_z = trilinear_interpolation(grad_z, point_vox_coord)
         second_gradient_vox = np.array([second_gradient_x, second_gradient_y, second_gradient_z])
         
-        # 将梯度从体素空间转换到世界空间
-        gradient_world = R_inv_T @ second_gradient_vox
-        gradient[i] = -gradient_world
+        # # 将梯度从体素空间转换到世界空间
+        # gradient_world = R_inv_T @ second_gradient_vox
+        # gradient[i] = -gradient_world
+        gradient[i] = -second_gradient_vox
     
     return image_gradient_energy, gradient
     
@@ -297,7 +298,7 @@ def compute_gradient_vector_xyz(input_image_path):
     grad_z_norm = grad_unit[..., 2]
     
     return Torig, gradient_magnitude, grad_x_norm, grad_y_norm, grad_z_norm
-    
+
 # def bm_to_Torig_data(brainmask_file):
 #     # brainmask到Torig和data
 #     brainmask = nib.load(brainmask_file)
