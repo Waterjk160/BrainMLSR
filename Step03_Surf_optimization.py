@@ -243,6 +243,26 @@ def vox_to_xyz_coord(Torig, vox):
 import numpy as np
 import nibabel as nib
 
+# def compute_gradient_vector_xyz(input_image_path):
+#     # 加载MRI图像
+#     mri_img = nib.load(input_image_path)
+    
+#     # 判断是否为 .mgz 文件（不区分大小写）
+#     if input_image_path.lower().endswith('.mgz'):
+#         Torig = mri_img.header.get_vox2ras_tkr()
+#     else:
+#         Torig = mri_img.affine.copy()
+        
+#     # 获取梯度幅值图像数据
+#     gradient_magnitude = mri_img.get_fdata()  # 这里已经是 |∇I_original|
+    
+#     # 计算x, y, z方向上的梯度（对梯度幅值求导）
+#     grad_x, grad_y, grad_z = np.gradient(gradient_magnitude)
+    
+#     # 不需要归一化，因为我们希望保留导数的实际大小
+    
+#     return Torig, gradient_magnitude, grad_x, grad_y, grad_z
+
 def compute_gradient_vector_xyz(input_image_path):
     # 加载MRI图像
     mri_img = nib.load(input_image_path)
@@ -253,17 +273,31 @@ def compute_gradient_vector_xyz(input_image_path):
     else:
         Torig = mri_img.affine.copy()
         
-    # 获取梯度幅值图像数据
-    gradient_magnitude = mri_img.get_fdata()  # 这里已经是 |∇I_original|
+    # 获取梯度幅值图像数据（|∇I_original|）
+    gradient_magnitude = mri_img.get_fdata()
     
-    # 计算x, y, z方向上的梯度（对梯度幅值求导）
+    # 计算 x, y, z 方向上的梯度（对梯度幅值求导）
     grad_x, grad_y, grad_z = np.gradient(gradient_magnitude)
     
-    # 不需要归一化，因为我们希望保留导数的实际大小
+    # 堆叠成 (H, W, D, 3) 的向量场
+    grad_vec = np.stack([grad_x, grad_y, grad_z], axis=-1)  # shape: (H, W, D, 3)
     
-    return Torig, gradient_magnitude, grad_x, grad_y, grad_z
-
-
+    # 计算每个体素的 L2 范数（梯度幅值的梯度大小）
+    norm = np.linalg.norm(grad_vec, axis=-1, keepdims=True)  # shape: (H, W, D, 1)
+    
+    # 避免除零：将 norm 为 0 的地方设为 1（这样归一化后仍为 0 向量）
+    norm_safe = np.where(norm == 0, 1.0, norm)
+    
+    # 归一化得到单位方向向量
+    grad_unit = grad_vec / norm_safe  # shape: (H, W, D, 3)
+    
+    # 拆分回 x, y, z 分量（可选，保持接口一致）
+    grad_x_norm = grad_unit[..., 0]
+    grad_y_norm = grad_unit[..., 1]
+    grad_z_norm = grad_unit[..., 2]
+    
+    return Torig, gradient_magnitude, grad_x_norm, grad_y_norm, grad_z_norm
+    
 # def bm_to_Torig_data(brainmask_file):
 #     # brainmask到Torig和data
 #     brainmask = nib.load(brainmask_file)

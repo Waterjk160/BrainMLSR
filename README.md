@@ -56,15 +56,15 @@ python Step02_GradImage.py --input_path T2FLAIR_05.mgz --output_path T2FLAIR_05_
 ```
 再通过能量函数对曲面进行优化。如果是lh的话，就把所有的rh改成lh.
 ```
-python Step03_Surf_Initialization.py \
-    --white_surf rh.wwhite --init_hypo_inner rh_init_hypo_layer.inner --init_hypo_outer rh_init_hypo_layer.outer --pial_surf rh.pial \
+python Step03_Surf_optimization.py \
+    --white_surf rh.white --init_hypo_inner rh_init_hypo_layer.inner --init_hypo_outer rh_init_hypo_layer.outer --pial_surf rh.pial \
     --T2_gradient_image T2FLAIR_05_gradient.mgz \
     --final_hypo_inner rh_hypo_layer.inner --final_hypo_outer rh_hypo_layer.outer
 ```
 各参数可以直接使用默认值，也可以进行设定。
 ```
-python Step03_Surf_Initialization.py \
-    --white_surf rh.wwhite --init_hypo_inner rh_init_hypo_layer.inner --init_hypo_outer rh_init_hypo_layer.outer --pial_surf rh.pial \
+python Step03_Surf_optimization.py \
+    --white_surf rh.white --init_hypo_inner rh_init_hypo_layer.inner --init_hypo_outer rh_init_hypo_layer.outer --pial_surf rh.pial \
     --T2_gradient_image T2FLAIR_05_gradient.mgz \
     --final_hypo_inner rh_hypo_layer.inner --final_hypo_outer rh_hypo_layer.outer \
     --alpha_inner 3.0 --alpha_outer 3.0 --beta_inner 1.0 --beta_middle 1.0 --beta_outer 1.0 --gamma_inner 0.5 --gamma_outer 0.5 \
