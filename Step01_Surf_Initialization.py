@@ -116,61 +116,107 @@ def vox_value_sample(T2_Torig, brainmask_data, ras_sample_points):
 
     return vox_values
 
-
 def find_key_points(data):
+    # caoshui 11/26
     """
     输入:
         data (list or numpy array): 包含一系列数值的列表或数组。
     返回:
         list of int: 分割点的索引列表，第一个是最大正值（上升最快），第二个是起始到该点中最小的负值（下降最快）。
-        注意：索引是基于原始数据的索引，且只在第二个点到倒数第二个点之间寻找。
+        注意：索引是基于原始数据的索引，且只在剔除首尾 5 个点后寻找。
     """
     data = np.array(data)
     
-    # 默认分割点
     max_positive_idx = None
     min_negative_idx = None
 
-    # 至少需要3个点才能去掉首尾并计算导数 
-    if len(data) < 3:
+    # 至少需要 11 个点才能去掉首尾 5 个点并计算导数
+    if len(data) < 11:
         return [None, None]
 
-    # 提取中间部分的数据（第二个点到倒数第二个点） 防止曲面之间的顶点有重合的情况
-    middle_data = data[1:-1]
-    
-    # 计算中间部分的一阶导数
+    # 去掉首尾 5 个点
+    trim = 5
+    middle_data = data[trim:-trim]   # 原本是 data[1:-1]
+
+    # 计算导数
     derivative = np.diff(middle_data)
 
-    # 找最大正值的位置（在中间部分的导数中）
+    # ---- 找最大正导数对应的 index ----
     if len(derivative) > 0:
         max_deriv_value = np.max(derivative)
         if max_deriv_value > 0:
             max_positive_idx_in_middle = np.argmax(derivative)
-            # 转换为原始数据的索引（+1是因为middle_data从原始数据的索引1开始）
-            max_positive_idx = max_positive_idx_in_middle + 1
-        # else:
-        #     # 没有正值，使用中间位置
-        #     max_positive_idx = int(0.6 * len(middle_data)) + 1  # 转换为原始索引
+            # 转换回原始数据索引
+            max_positive_idx = max_positive_idx_in_middle + trim
 
-    # 找最小负值（在起始到max_positive_idx之间，基于原始数据索引）
-    if max_positive_idx is not None and max_positive_idx > 1:  # 确保有足够的点
-        # 计算原始数据中从索引1到max_positive_idx的导数
-        segment = np.diff(data[1:max_positive_idx])
+    # ---- 找最小负导数（仅在 0~max_positive_idx 之间）----
+    if max_positive_idx is not None and max_positive_idx > trim:
+        # 在 data[trim : max_positive_idx] 范围内找下降最快
+        segment = np.diff(data[trim:max_positive_idx])
         if len(segment) > 0:
             min_deriv_value = np.min(segment)
             if min_deriv_value < 0:
                 min_negative_idx_in_segment = np.argmin(segment)
-                # 转换为原始数据的索引（+1是因为segment从原始数据的索引1开始）
-                min_negative_idx = min_negative_idx_in_segment + 1
-
-    # # 如果没有找到有效的关键点，设置默认值
-    # if max_positive_idx is None:
-    #     max_positive_idx = int(0.6 * (len(data) - 2)) + 1  # 中间位置，忽略首尾
-    
-    # if min_negative_idx is None:
-    #     min_negative_idx = int(0.5 * max_positive_idx) if max_positive_idx > 0 else 1
+                # 转换回原始数据索引
+                min_negative_idx = min_negative_idx_in_segment + trim
 
     return min_negative_idx, max_positive_idx
+
+
+# def find_key_points(data):
+#     """
+#     输入:
+#         data (list or numpy array): 包含一系列数值的列表或数组。
+#     返回:
+#         list of int: 分割点的索引列表，第一个是最大正值（上升最快），第二个是起始到该点中最小的负值（下降最快）。
+#         注意：索引是基于原始数据的索引，且只在第二个点到倒数第二个点之间寻找。
+#     """
+#     data = np.array(data)
+    
+#     # 默认分割点
+#     max_positive_idx = None
+#     min_negative_idx = None
+
+#     # 至少需要3个点才能去掉首尾并计算导数 
+#     if len(data) < 3:
+#         return [None, None]
+
+#     # 提取中间部分的数据（第二个点到倒数第二个点） 防止曲面之间的顶点有重合的情况
+#     middle_data = data[1:-1]
+    
+#     # 计算中间部分的一阶导数
+#     derivative = np.diff(middle_data)
+
+#     # 找最大正值的位置（在中间部分的导数中）
+#     if len(derivative) > 0:
+#         max_deriv_value = np.max(derivative)
+#         if max_deriv_value > 0:
+#             max_positive_idx_in_middle = np.argmax(derivative)
+#             # 转换为原始数据的索引（+1是因为middle_data从原始数据的索引1开始）
+#             max_positive_idx = max_positive_idx_in_middle + 1
+#         # else:
+#         #     # 没有正值，使用中间位置
+#         #     max_positive_idx = int(0.6 * len(middle_data)) + 1  # 转换为原始索引
+
+#     # 找最小负值（在起始到max_positive_idx之间，基于原始数据索引）
+#     if max_positive_idx is not None and max_positive_idx > 1:  # 确保有足够的点
+#         # 计算原始数据中从索引1到max_positive_idx的导数
+#         segment = np.diff(data[1:max_positive_idx])
+#         if len(segment) > 0:
+#             min_deriv_value = np.min(segment)
+#             if min_deriv_value < 0:
+#                 min_negative_idx_in_segment = np.argmin(segment)
+#                 # 转换为原始数据的索引（+1是因为segment从原始数据的索引1开始）
+#                 min_negative_idx = min_negative_idx_in_segment + 1
+
+#     # # 如果没有找到有效的关键点，设置默认值
+#     # if max_positive_idx is None:
+#     #     max_positive_idx = int(0.6 * (len(data) - 2)) + 1  # 中间位置，忽略首尾
+    
+#     # if min_negative_idx is None:
+#     #     min_negative_idx = int(0.5 * max_positive_idx) if max_positive_idx > 0 else 1
+
+#     return min_negative_idx, max_positive_idx
 
 
 
