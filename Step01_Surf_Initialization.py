@@ -368,14 +368,15 @@ def extract_signal_surfaces(white_file, pial_file, T2_file, num_samples, \
         lh_w_v1, lh_p_v1, T2_Torig, T2_brainmask_data, num_samples
     )
 
-    # 创建输出目录
-    os.makedirs(output_file_path, exist_ok=True)
+    # # 创建输出目录
+    # os.makedirs(output_file_path, exist_ok=True)
 
     # 保存为 freesurfer 格式的几何文件
     nib.freesurfer.io.write_geometry(init_hypo_inner, hypointense_layer_inner_list, lh_w_f1)
     nib.freesurfer.io.write_geometry(init_hypo_outer, hypointense_layer_outer_list, lh_w_f1)
 
-    print(f"已保存中间层网格到：{output_file_path}")
+    print(f"已保存inner到：{init_hypo_inner}")
+    print(f"已保存outer到：{init_hypo_outer}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some freesurfer data.")
