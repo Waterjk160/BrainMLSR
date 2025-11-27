@@ -492,10 +492,11 @@ def main(white_surf, pial_surf, init_hypo_inner, init_hypo_outer, T2_gradient_im
                 alpha_inner, alpha_outer,  beta_inner, beta_middle, beta_outer, gamma_inner, gamma_outer,                \
                 learning_rate, iterations, tol):
     # 加载数据
-    inner_coords, faces = read_geometry(white_surf)
+    inner_coords, faces, volume_info, create_stamp  = read_geometry(white_surf,read_metadata=True, read_stamp=True)
     outer_coords, _ = read_geometry(pial_surf)
     initial_v_inner, _,  = read_geometry(init_hypo_inner)
     initial_v_outer, _,  = read_geometry(init_hypo_outer)
+
 
 
     # 执行梯度下降优化
@@ -504,8 +505,8 @@ def main(white_surf, pial_surf, init_hypo_inner, init_hypo_outer, T2_gradient_im
                                                                 learning_rate, iterations, tol)
 
     # 保存结果
-    write_geometry(final_hypo_inner, optimized_v_inner, faces)
-    write_geometry(final_hypo_outer, optimized_v_outer, faces)
+    write_geometry(final_hypo_inner, optimized_v_inner, faces, create_stamp, volume_info)
+    write_geometry(final_hypo_outer, optimized_v_outer, faces, create_stamp, volume_info)
     print(f"final_hypo_inner={final_hypo_inner}", flush=True)
     print(f"final_hypo_outer={final_hypo_outer}", flush=True)
 

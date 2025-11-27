@@ -356,9 +356,12 @@ def extract_signal_surfaces(white_file, pial_file, T2_file, num_samples, \
             1.先做lh的
         
     """
-    # 读取T1的mesh
-    lh_w_v1, lh_w_f1 = nib.freesurfer.io.read_geometry(white_file)
-    lh_p_v1, lh_p_f1 = nib.freesurfer.io.read_geometry(pial_file)
+    # # 读取T1的mesh
+    # lh_w_v1, lh_w_f1 = nib.freesurfer.io.read_geometry(white_file)
+    # lh_p_v1, lh_p_f1 = nib.freesurfer.io.read_geometry(pial_file)
+    # 读取T1的mesh 如果是freesurfer的结果
+    lh_w_v1, lh_w_f1, volume_info, create_stamp = nib.freesurfer.io.read_geometry(white_file,read_metadata=True, read_stamp=True)
+    lh_p_v1, lh_p_f1, _, _ = nib.freesurfer.io.read_geometry(pial_file,read_metadata=True, read_stamp=True)
 
     # 读取T2 Flair的数据
     T2_Torig, T2_brainmask_data = bm_to_Torig_data(T2_file)
@@ -371,9 +374,12 @@ def extract_signal_surfaces(white_file, pial_file, T2_file, num_samples, \
     # # 创建输出目录
     # os.makedirs(output_file_path, exist_ok=True)
 
+    # # 保存为 freesurfer 格式的几何文件
+    # nib.freesurfer.io.write_geometry(init_hypo_inner, hypointense_layer_inner_list, lh_w_f1)
+    # nib.freesurfer.io.write_geometry(init_hypo_outer, hypointense_layer_outer_list, lh_w_f1)
     # 保存为 freesurfer 格式的几何文件
-    nib.freesurfer.io.write_geometry(init_hypo_inner, hypointense_layer_inner_list, lh_w_f1)
-    nib.freesurfer.io.write_geometry(init_hypo_outer, hypointense_layer_outer_list, lh_w_f1)
+    nib.freesurfer.io.write_geometry(init_hypo_inner, hypointense_layer_inner_list, lh_w_f1, create_stamp, volume_info)
+    nib.freesurfer.io.write_geometry(init_hypo_outer, hypointense_layer_outer_list, lh_w_f1, create_stamp, volume_info)
 
     print(f"已保存inner到：{init_hypo_inner}")
     print(f"已保存outer到：{init_hypo_outer}")
