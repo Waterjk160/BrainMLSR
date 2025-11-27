@@ -73,9 +73,9 @@ python Step03_Surf_optimization.py \
 SUBJECT_DIR 是存储原始图像T1.nii.gz和T2FLAIR.nii.gz的路径。Result_Dir是输出路径。Code_Dir是本项目的代码路径。
 注意要加载符合requirements的python环境以及freesurfer
 
-'''
+```
 sbatch BrainMLSR.sh "$subject_path" "$result_dir" "#code_path"
-'''
+```
 
 
 
