@@ -29,7 +29,7 @@ mri_convert T2.nii.gz T2FLAIR_05.mgz -cs 0.5
 ### 1.2 图像配准 T1配准到T2FLAIR图像
 T1配准到T2FLAIR图像。为了将重建后的皮层与图像对齐，并且因为多信号层的信号在T2FLAIR图像上，我们尽量不动T2FLAIR图像，所以将T1配准到T2FLAIR。可以使用我们提供的配准代码。
 ```
-python Register.py --fixed T2FLAIR_05.mgz --moving T1_05.nii.gz --output_dir T1_05_reg.nii.gz
+python Step00_Register.py --fixed T2FLAIR_05.mgz --moving T1_05.nii.gz --output_dir T1_05_reg.nii.gz
 ```
 ### 1.3 皮层内外表面重建
 用FreeSurfer基于T1进行皮层内外表面重建，具体freesurfer重建皮层表面可以参考freesurfer官网。其中，UII_5T替换成自己合适的路径。
@@ -50,22 +50,18 @@ python Step01_Surf_Initialization.py \
 ```
 
 ### 2.2 多信号层表面优化
-先得到T2FLAIR的梯度图像，为能量函数的优化做准备。
+通过能量函数对曲面进行优化。如果是lh的话，就把所有的rh改成lh.
 ```
-python Step02_GradImage.py --input_path T2FLAIR_05.mgz --output_path T2FLAIR_05_gradient.mgz
-```
-再通过能量函数对曲面进行优化。如果是lh的话，就把所有的rh改成lh.
-```
-python Step03_Surf_optimization.py \
+python Step02_Surf_optimization.py \
     --white_surf rh.white --init_hypo_inner rh_init_hypo_layer.inner --init_hypo_outer rh_init_hypo_layer.outer --pial_surf rh.pial \
-    --T2_gradient_image T2FLAIR_05_gradient.mgz \
+    --T2_image T2FLAIR_05.mgz \
     --final_hypo_inner rh_hypo_layer.inner --final_hypo_outer rh_hypo_layer.outer
 ```
 各参数可以直接使用默认值，也可以进行设定。
 ```
 python Step03_Surf_optimization.py \
     --white_surf rh.white --init_hypo_inner rh_init_hypo_layer.inner --init_hypo_outer rh_init_hypo_layer.outer --pial_surf rh.pial \
-    --T2_gradient_image T2FLAIR_05_gradient.mgz \
+    --T2_image T2FLAIR_05.mgz \
     --final_hypo_inner rh_hypo_layer.inner --final_hypo_outer rh_hypo_layer.outer \
     --alpha_inner 3.0 --alpha_outer 3.0 --beta_inner 1.0 --beta_middle 1.0 --beta_outer 1.0 --gamma_inner 0.5 --gamma_outer 0.5 \
     --learning_rate 0.01 --iterations 80 --tol 1e-6
@@ -73,14 +69,13 @@ python Step03_Surf_optimization.py \
 ```
 
 
+## 3. 集成一键运行
+SUBJECT_DIR 是存储原始图像T1.nii.gz和T2FLAIR.nii.gz的路径。Result_Dir是输出路径。Code_Dir是本项目的代码路径。
+注意要加载符合requirements的python环境以及freesurfer
 
-
-
-
-
-
-
-
+'''
+sbatch BrainMLSR.sh "$subject_path" "$result_dir" "#code_path"
+'''
 
 
 

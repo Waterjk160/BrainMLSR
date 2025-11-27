@@ -263,41 +263,111 @@ import nibabel as nib
 #     # 不需要归一化，因为我们希望保留导数的实际大小
     
 #     return Torig, gradient_magnitude, grad_x, grad_y, grad_z
+def compute_gradient_magnitude_first_order(image_data):
+    """
+    使用前向/后向差分计算一阶梯度幅值（非 Sobel）。
+    """
+    depth, height, width = image_data.shape
+
+    grad_x = np.zeros_like(image_data, dtype=np.float32)
+    grad_y = np.zeros_like(image_data, dtype=np.float32)
+    grad_z = np.zeros_like(image_data, dtype=np.float32)
+
+    # x: depth (axis=0)
+    grad_x[:-1, :, :] = image_data[1:, :, :] - image_data[:-1, :, :]
+    grad_x[-1, :, :] = image_data[-1, :, :] - image_data[-2, :, :]
+
+    # y: height (axis=1)
+    grad_y[:, :-1, :] = image_data[:, 1:, :] - image_data[:, :-1, :]
+    grad_y[:, -1, :] = image_data[:, -1, :] - image_data[:, -2, :]
+
+    # z: width (axis=2)
+    grad_z[:, :, :-1] = image_data[:, :, 1:] - image_data[:, :, :-1]
+    grad_z[:, :, -1] = image_data[:, :, -1] - image_data[:, :, -2]
+
+    gradient_magnitude = np.sqrt(grad_x**2 + grad_y**2 + grad_z**2)
+    return gradient_magnitude
 
 def compute_gradient_vector_xyz(input_image_path):
-    # 加载MRI图像
-    mri_img = nib.load(input_image_path)
+    """
+    端到端：从原始 MRI 图像 → 一阶梯度幅值 → 归一化的二阶梯度方向向量。
     
-    # 判断是否为 .mgz 文件（不区分大小写）
+    Args:
+        input_image_path (str): 原始 MRI 文件路径 (.nii, .nii.gz, .mgz)
+    
+    Returns:
+        Torig (np.ndarray): 4x4 RAS 变换矩阵（FreeSurfer TKReg 或标准 affine）
+        grad_mag (np.ndarray): 一阶梯度幅值 (D, H, W)
+        grad_x_norm (np.ndarray): 二阶单位梯度 x 分量 (D, H, W)
+        grad_y_norm (np.ndarray): 二阶单位梯度 y 分量 (D, H, W)
+        grad_z_norm (np.ndarray): 二阶单位梯度 z 分量 (D, H, W)
+    """
+    # --- Step 1: Load original image ---
+    img = nib.load(input_image_path)
+    data = img.get_fdata()  # shape: (D, H, W)
+
+    # Determine Torig
     if input_image_path.lower().endswith('.mgz'):
-        Torig = mri_img.header.get_vox2ras_tkr()
+        Torig = img.header.get_vox2ras_tkr()
     else:
-        Torig = mri_img.affine.copy()
-        
-    # 获取梯度幅值图像数据（|∇I_original|）
-    gradient_magnitude = mri_img.get_fdata()
-    
-    # 计算 x, y, z 方向上的梯度（对梯度幅值求导）
-    grad_x, grad_y, grad_z = np.gradient(gradient_magnitude)
-    
-    # 堆叠成 (H, W, D, 3) 的向量场
-    grad_vec = np.stack([grad_x, grad_y, grad_z], axis=-1)  # shape: (H, W, D, 3)
-    
-    # 计算每个体素的 L2 范数（梯度幅值的梯度大小）
-    norm = np.linalg.norm(grad_vec, axis=-1, keepdims=True)  # shape: (H, W, D, 1)
-    
-    # 避免除零：将 norm 为 0 的地方设为 1（这样归一化后仍为 0 向量）
+        Torig = img.affine.copy()
+
+    # --- Step 2: Compute first-order gradient magnitude ---
+    grad_mag = compute_gradient_magnitude_first_order(data)  # (D, H, W)
+
+    # --- Step 3: Compute second-order gradient on grad_mag ---
+    # np.gradient 默认按 axis=0,1,2 对应 (D, H, W)
+    grad_x2, grad_y2, grad_z2 = np.gradient(grad_mag)  # each: (D, H, W)
+
+    # Stack into vector field: shape (D, H, W, 3)
+    grad_vec = np.stack([grad_x2, grad_y2, grad_z2], axis=-1)
+
+    # Normalize to unit vectors
+    norm = np.linalg.norm(grad_vec, axis=-1, keepdims=True)  # (D, H, W, 1)
     norm_safe = np.where(norm == 0, 1.0, norm)
-    
-    # 归一化得到单位方向向量
-    grad_unit = grad_vec / norm_safe  # shape: (H, W, D, 3)
-    
-    # 拆分回 x, y, z 分量（可选，保持接口一致）
+    grad_unit = grad_vec / norm_safe  # (D, H, W, 3)
+
+    # Split back to components
     grad_x_norm = grad_unit[..., 0]
     grad_y_norm = grad_unit[..., 1]
     grad_z_norm = grad_unit[..., 2]
+
+    return Torig, grad_mag, grad_x_norm, grad_y_norm, grad_z_norm
+
+# def compute_gradient_vector_xyz(input_image_path):
+#     # 加载MRI图像
+#     mri_img = nib.load(input_image_path)
     
-    return Torig, gradient_magnitude, grad_x_norm, grad_y_norm, grad_z_norm
+#     # 判断是否为 .mgz 文件（不区分大小写）
+#     if input_image_path.lower().endswith('.mgz'):
+#         Torig = mri_img.header.get_vox2ras_tkr()
+#     else:
+#         Torig = mri_img.affine.copy()
+        
+#     # 获取梯度幅值图像数据（|∇I_original|）
+#     gradient_magnitude = mri_img.get_fdata()
+    
+#     # 计算 x, y, z 方向上的梯度（对梯度幅值求导）
+#     grad_x, grad_y, grad_z = np.gradient(gradient_magnitude)
+    
+#     # 堆叠成 (H, W, D, 3) 的向量场
+#     grad_vec = np.stack([grad_x, grad_y, grad_z], axis=-1)  # shape: (H, W, D, 3)
+    
+#     # 计算每个体素的 L2 范数（梯度幅值的梯度大小）
+#     norm = np.linalg.norm(grad_vec, axis=-1, keepdims=True)  # shape: (H, W, D, 1)
+    
+#     # 避免除零：将 norm 为 0 的地方设为 1（这样归一化后仍为 0 向量）
+#     norm_safe = np.where(norm == 0, 1.0, norm)
+    
+#     # 归一化得到单位方向向量
+#     grad_unit = grad_vec / norm_safe  # shape: (H, W, D, 3)
+    
+#     # 拆分回 x, y, z 分量（可选，保持接口一致）
+#     grad_x_norm = grad_unit[..., 0]
+#     grad_y_norm = grad_unit[..., 1]
+#     grad_z_norm = grad_unit[..., 2]
+    
+#     return Torig, gradient_magnitude, grad_x_norm, grad_y_norm, grad_z_norm
 
 # def bm_to_Torig_data(brainmask_file):
 #     # brainmask到Torig和data
@@ -516,7 +586,7 @@ if __name__ == "__main__":
     parser.add_argument('--pial_surf', required=True, type=str, help='Path to the pial surface file.')
     parser.add_argument('--init_hypo_inner', required=True, type=str, help='Path to the initial inner hypointense layer surf file.')
     parser.add_argument('--init_hypo_outer', required=True, type=str, help='Path to the initial outer hypointense layer surf file.')
-    parser.add_argument('--T2_gradient_image', required=True, type=str, help='Path to the T2 gradient image file.')
+    parser.add_argument('--T2_image', required=True, type=str, help='Path to the T2 image file.')
     parser.add_argument('--final_hypo_inner', required=True, type=str, help='Path to save the optimized inner final surf file.')
     parser.add_argument('--final_hypo_outer', required=True, type=str, help='Path to save the optimized outer final surf file.')
 
