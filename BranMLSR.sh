@@ -16,13 +16,13 @@ SUBJECT_DIR=$1
 Result_Dir=$2
 Code_Dir=$3
 
-# # 加载必要的模块
-# module load tools/conda/anaconda.2023.09
-# # 激活Conda环境 这里 "mri" 改成自己的conda环境
-# source activate mri
-# # 加载freesurfer
-# module load apps/freesurfer7.3.2
-# source /public/software/apps/freesurfer_infant/freesurfer7.3.2/freesurfer/7.3.2-1/SetUpFreeSurfer.sh
+# 加载必要的模块
+module load tools/conda/anaconda.2023.09
+# 激活Conda环境 这里 "mri" 改成自己的conda环境
+source activate mri
+# 加载freesurfer
+module load apps/freesurfer7.3.2
+source /public/software/apps/freesurfer_infant/freesurfer7.3.2/freesurfer/7.3.2-1/SetUpFreeSurfer.sh
 
 
 # 总体流程
@@ -162,7 +162,7 @@ echo "完成执行 t2flair 和 t1 改成 0.5mm..."
 # 执行
 echo "开始执行 t1 配准到 t2flair..."
 # 设置Python脚本和图像文件的路径
-REGISTER_SCRIPT_PATH="$Code_Dir/Register.py"
+REGISTER_SCRIPT_PATH="$Code_Dir/Step00_Register.py"
 REGISTER_FIXED_IMAGE=$CONVERT_T2_output_file
 REGISTER_MOVING_IMAGE=$CONVERT_T1_output_file
 t1flair_register="$Image_Dir/T1_to_T2flair_registered.mgz"
