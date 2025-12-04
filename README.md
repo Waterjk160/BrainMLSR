@@ -76,6 +76,8 @@ SUBJECT_DIR 是存储原始图像T1.nii.gz和T2FLAIR.nii.gz的路径。Result_Di
 ```
 sbatch BrainMLSR.sh "$subject_path" "$result_dir" "#code_path"
 ```
+最终使用的图像：
+result_dir/mri/T2_05.mgz 和 T1_to_T2flair_registered.mgz
 
 
 

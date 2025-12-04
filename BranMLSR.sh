@@ -16,13 +16,18 @@ SUBJECT_DIR=$1
 Result_Dir=$2
 Code_Dir=$3
 
+
+
+# 加载freesurfer
+module load apps/freesurfer7.3.2
+source /public/software/apps/freesurfer_infant/freesurfer7.3.2/freesurfer/7.3.2-1/SetUpFreeSurfer.sh
+
 # 加载必要的模块
 module load tools/conda/anaconda.2023.09
 # 激活Conda环境 这里 "mri" 改成自己的conda环境
 source activate mri
-# 加载freesurfer
-module load apps/freesurfer7.3.2
-source /public/software/apps/freesurfer_infant/freesurfer7.3.2/freesurfer/7.3.2-1/SetUpFreeSurfer.sh
+# 强制将 mri 环境的 bin 目录放到 PATH 最前面
+export PATH="/home_data/home/caoshui2024/.conda/envs/mri/bin:$PATH"
 
 
 # 总体流程
@@ -251,6 +256,7 @@ python $Code_Dir/Step01_Surf_Initialization.py \
     --T2flair $T2flair_use \
     --init_hypo_inner $Surf_Dir/rh_init_hypo_layer.inner \
     --init_hypo_outer $Surf_Dir/rh_init_hypo_layer.outer \
+
 echo "完成执行 rh  ..."
 
 echo "开始执行 lh  ..."
@@ -261,6 +267,7 @@ python $Code_Dir/Step01_Surf_Initialization.py \
     --T2flair $T2flair_use \
     --init_hypo_inner $Surf_Dir/lh_init_hypo_layer.inner \
     --init_hypo_outer $Surf_Dir/lh_init_hypo_layer.outer \
+
 echo "完成执行 lh  ..."
 
 # 检查命令是否成功执行
@@ -293,9 +300,7 @@ output_dir=$(dirname "$lh_granular_inner")
 mkdir -p "$output_dir"
 
 echo "开始执行 lh refine surface  ..."
-# 运行Python脚本并传递参数
-python /home_data/home/caoshui2024/Pipeline/pipeline/code/refine.py \
-    $INNER_WHITE $PIAL_SURF $LAYER_45_WHITE $LAYER_34_WHITE $T2_GRADIENT_IMAGE $lh_granular_inner $lh_granular_outer
+
 python $Code_Dir/Step02_Surf_optimization.py \
     --white_surf $RH_WHITE --init_hypo_inner $Surf_Dir/rh_init_hypo_layer.inner --init_hypo_outer $Surf_Dir/rh_init_hypo_layer.outer --pial_surf $RH_PIAL \
     --T2_image $T2flair_use \
@@ -309,9 +314,6 @@ output_dir=$(dirname "$rh_granular_inner")
 mkdir -p "$output_dir"
 
 echo "开始执行 rh refine surface  ..."
-# 运行Python脚本并传递参数
-python /home_data/home/caoshui2024/Pipeline/pipeline/code/refine.py \
-    $INNER_WHITE $PIAL_SURF $LAYER_45_WHITE $LAYER_34_WHITE $T2_GRADIENT_IMAGE $rh_granular_inner $rh_granular_outer
 
 python $Code_Dir/Step02_Surf_optimization.py \
     --white_surf $LH_WHITE --init_hypo_inner $Surf_Dir/lh_init_hypo_layer.inner --init_hypo_outer $Surf_Dir/lh_init_hypo_layer.outer --pial_surf $LH_PIAL \

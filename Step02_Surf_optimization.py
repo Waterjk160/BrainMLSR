@@ -558,7 +558,7 @@ def check_collinearity_and_order_single(inner_gm, inner_gr, outer_gr, outer_gm, 
         
     return True
 
-def main(white_surf, pial_surf, init_hypo_inner, init_hypo_outer, T2_gradient_image, final_hypo_inner, final_hypo_outer, \
+def main(white_surf, pial_surf, init_hypo_inner, init_hypo_outer, T2_image, final_hypo_inner, final_hypo_outer, \
                 alpha_inner, alpha_outer,  beta_inner, beta_middle, beta_outer, gamma_inner, gamma_outer,                \
                 learning_rate, iterations, tol):
     # 加载数据
@@ -570,7 +570,7 @@ def main(white_surf, pial_surf, init_hypo_inner, init_hypo_outer, T2_gradient_im
 
 
     # 执行梯度下降优化
-    optimized_v_inner, optimized_v_outer = gradient_descent(inner_coords, outer_coords, initial_v_inner, initial_v_outer, faces, T2_gradient_image,       \
+    optimized_v_inner, optimized_v_outer = gradient_descent(inner_coords, outer_coords, initial_v_inner, initial_v_outer, faces, T2_image,       \
                                                                 alpha_inner, alpha_outer,  beta_inner, beta_middle, beta_outer, gamma_inner, gamma_outer, \
                                                                 learning_rate, iterations, tol)
 
@@ -604,11 +604,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if not all(map(os.path.exists, [args.white_surf, args.pial_surf, args.init_hypo_inner, args.init_hypo_outer, args.T2_gradient_image])):
-        missing_files = [f for f in ['white_surf', 'pial_surf', 'init_hypo_inner', 'init_hypo_outer', 'T2_gradient_image'] if not os.path.exists(getattr(args, f))]
+    if not all(map(os.path.exists, [args.white_surf, args.pial_surf, args.init_hypo_inner, args.init_hypo_outer, args.T2_image])):
+        missing_files = [f for f in ['white_surf', 'pial_surf', 'init_hypo_inner', 'init_hypo_outer', 'T2_image'] if not os.path.exists(getattr(args, f))]
         raise FileNotFoundError(f"The following files do not exist: {', '.join(missing_files)}")
 
-    # main(args.white_surf, args.pial_surf, args.init_hypo_inner, args.init_hypo_outer, args.T2_gradient_image, \
+    # main(args.white_surf, args.pial_surf, args.init_hypo_inner, args.init_hypo_outer, args.T2_image, \
     #                             args.final_hypo_inner, args.final_hypo_outer)
 
     # 调用 main 函数，传入所有参数
@@ -617,7 +617,7 @@ if __name__ == "__main__":
         pial_surf=args.pial_surf,
         init_hypo_inner=args.init_hypo_inner,
         init_hypo_outer=args.init_hypo_outer,
-        T2_gradient_image=args.T2_gradient_image,
+        T2_image=args.T2_image,
         final_hypo_inner=args.final_hypo_inner,
         final_hypo_outer=args.final_hypo_outer,
 
