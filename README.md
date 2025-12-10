@@ -24,9 +24,11 @@ sbatch BrainMLSR.sh "$subject_path" "$result_dir" "#code_path"
 ```
 
 ### 输入的图像结构：
+```
 Subject/
   ├── T1.nii.gz
   └── T2FLAIR.nii.gz
+```
 
 ### 最终使用的图像：
  Result/
